@@ -1,0 +1,227 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import sys
+import argparse
+import time
+
+DB_FILE = "database.json"
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="task-cli", description="Simple CLI task manager")
+    subparser = parser.add_subparsers(dest="command", required=True)
+    
+    add_parser = subparser.add_parser("add", help="Add a new task")
+    add_parser.add_argument("description", help="Description of a task")
+
+    update_parser = subparser.add_parser("update", help="Update an existing task")
+    update_parser.add_argument("id", type=int, help="Index of a task")
+    update_parser.add_argument("description", help="New description of a task")
+
+    delete_parser = subparser.add_parser("delete", help="Delete an existing task")
+    delete_parser.add_argument("id", type=int, help="Index of a task that would be deleted")
+
+    mark_in_progress_parser = subparser.add_parser("mark-in-progress", help="Mark in progress")
+    mark_in_progress_parser.add_argument("id", type=int, help="Index of a task that would be marked")
+
+    mark_done_parser = subparser.add_parser("mark-done", help="Mark in done")
+    mark_done_parser.add_argument("id", type=int, help="Index of a task that would be marked")
+
+    lits_parser = subparser.add_parser("list", help="List tasks")
+    lits_parser.add_argument("status", nargs="?", choices=["done", "todo", "in-progress"], help="Filter by status (optional)")    
+
+    args = parser.parse_args()
+
+    match args.command:
+        case "add":
+            add_task(args.description)
+        case "update":
+            update_task(args.id, args.description)
+        case "delete":
+            delete_task(args.id)
+        case "mark-in-progress":
+            mark_in_progress(args.id)
+        case "mark-done":
+            mark_done(args.id)
+        case "list":
+            if args.status == "done":
+                list_done()
+            elif args.status == "todo":
+                list_todo()
+            elif args.status == "in-progress":
+                list_in_progress()
+            else:
+                list_tasks()
+        
+
+def list_tasks():
+    if os.path.exists(DB_FILE) and os.stat(DB_FILE).st_size != 0:
+        with open(DB_FILE, "r", encoding="utf-8") as file:
+            tasks = json.load(file)
+    else:
+        print("Nothing to list")
+        sys.exit()
+
+    for task in tasks:
+        print(f'{task["id"]}. {task["description"]} |{task["status"]}|\nCreated: {task["createdAt"]}')
+        if "updatedAt" in task and task["updatedAt"]:
+            print(f'Updated: {task["updatedAt"]}')
+        print("-----")
+
+def list_done():
+    if os.path.exists(DB_FILE) and os.stat(DB_FILE).st_size != 0:
+        with open(DB_FILE, "r", encoding="utf-8") as file:
+            tasks = json.load(file)
+    else:
+        print("Nothing to list")
+        sys.exit()
+
+    for task in tasks:
+        if task["status"] == "done":
+            print(f'{task["id"]}. {task["description"]} |{task["status"]}|\nCreated: {task["createdAt"]}')
+            if "updatedAt" in task and task["updatedAt"]:
+                print(f'Updated: {task["updatedAt"]}')
+            print("-----")
+
+def list_todo():
+    if os.path.exists(DB_FILE) and os.stat(DB_FILE).st_size != 0:
+        with open(DB_FILE, "r", encoding="utf-8") as file:
+            tasks = json.load(file)
+    else:
+        print("Nothing to list")
+        sys.exit()
+
+    for task in tasks:
+        if task["status"] == "todo":
+            print(f'{task["id"]}. {task["description"]} |{task["status"]}|\nCreated: {task["createdAt"]}')
+            if "updatedAt" in task and task["updatedAt"]:
+                print(f'Updated: {task["updatedAt"]}')
+            print("-----")
+
+def list_in_progress():
+    if os.path.exists(DB_FILE) and os.stat(DB_FILE).st_size != 0:
+        with open(DB_FILE, "r", encoding="utf-8") as file:
+            tasks = json.load(file)
+    else:
+        print("Nothing to list")
+        sys.exit()
+
+    for task in tasks:
+        if task["status"] == "in-progress":
+            print(f'{task["id"]}. {task["description"]} |{task["status"]}|\nCreated: {task["createdAt"]}')
+            if "updatedAt" in task and task["updatedAt"]:
+                print(f'Updated: {task["updatedAt"]}')
+            print("-----")
+
+def mark_in_progress(task_id):
+    if os.path.exists(DB_FILE) and os.stat(DB_FILE).st_size != 0:
+        with open(DB_FILE, "r", encoding="utf-8") as file:
+            tasks = json.load(file)
+    else:
+        print("Nothing to mark")
+        sys.exit()
+
+    new_status = "in-progress"
+
+    for task in tasks:
+        if task["id"] == task_id:
+            task["status"] = new_status
+            task["updatedAt"] = time.ctime()
+            break
+    else:
+        print(f'Task with id {task_id} not found')
+        sys.exit()
+
+    with open(DB_FILE, "w", encoding="utf-8") as file:
+        json.dump(tasks, file)
+        print(f'Task {task_id} - marked in progress')
+        
+def mark_done(task_id):
+    if os.path.exists(DB_FILE) and os.stat(DB_FILE).st_size != 0:
+        with open(DB_FILE, "r", encoding="utf-8") as file:
+            tasks = json.load(file)
+    else:
+        print("Nothing to mark")
+        sys.exit()
+
+    new_status = "done"
+
+    for task in tasks:
+        if task["id"] == task_id:
+            task["status"] = new_status
+            task["updatedAt"] = time.ctime()
+            break
+    else:
+        print(f'Task with id {task_id} not found')
+        sys.exit()
+
+    with open(DB_FILE, "w", encoding="utf-8") as file:
+        json.dump(tasks, file)
+        print(f'Task {task_id} - marked done')
+
+def delete_task(task_id):
+    if os.path.exists(DB_FILE) and os.stat(DB_FILE).st_size != 0:
+        with open(DB_FILE, "r", encoding="utf-8") as file:
+            tasks = json.load(file)
+    else:
+        print("Nothing to delete")
+        sys.exit()
+
+    new_tasks = [task for task in tasks if task["id"] != task_id]
+
+    if len(new_tasks) == len(tasks):
+        print("Cannot find task with such id")
+        return
+    
+    for index,task in enumerate(new_tasks, start=1):
+        task["id"] = index
+
+    with open(DB_FILE, 'w', encoding="utf-8") as file:
+        json.dump(new_tasks, file)
+
+    print(f'Task {task_id} sucessfully deleted')
+
+def update_task(task_id, task_description):
+    if os.path.exists(DB_FILE) and os.stat(DB_FILE).st_size != 0:
+        with open(DB_FILE, 'r', encoding="utf-8") as file:
+            tasks = json.load(file)
+    else:
+        print("Nothing to update")
+        sys.exit()
+
+
+    for task in tasks:
+        if task["id"] == task_id:
+            task["description"] = task_description
+            task["updatedAt"] = time.ctime()
+            break
+
+    with open (DB_FILE, "w", encoding="utf-8") as file:
+        json.dump(tasks, file)
+        print(f'Task {task_id} is successfully updated')  
+
+def add_task(task_description):
+    if os.path.exists(DB_FILE) and os.stat(DB_FILE).st_size != 0:
+        with open (DB_FILE, "r", encoding="utf-8") as file:
+            tasks = json.load(file) 
+    else:
+        tasks = [] 
+
+    new_task = {
+        "id": max([task["id"] for task in tasks], default=0) + 1,
+        "description":task_description,
+        "status":"todo",
+        "createdAt":time.ctime(),
+        "updatedAt":""
+    }
+
+    tasks.append(new_task)
+
+    with open(DB_FILE, "w", encoding="utf-8") as file:
+        file.write(json.dumps(tasks))
+        print(f'Task "{task_description}" is successfully created')
+
+if __name__ == "__main__":
+    main()
